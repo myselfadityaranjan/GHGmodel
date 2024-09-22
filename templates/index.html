@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHG Monitoring</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <div class="card-body">
+            <h1 class="card-title">GHG Monitoring and Recommendations</h1>
+            <div id="map"></div>
+            <div id="result" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+<script>
+    let cities = [];  // To store city data
+
+    // Load city data from JSON
+    $(document).ready(function() {
+        $.getJSON('data/cities.json', function(data) {
+            cities = data;
+            initMap();
+        });
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 2,
+                center: {lat: 20, lng: 0}
+            });
+
+            cities.forEach(city => {
+                const marker = new google.maps.Marker({
+                    position: city.coordinates,
+                    map: map,
+                    title: city.name
+                });
+
+                marker.addListener('click', function() {
+                    $.ajax({
+                        url: '/fetch_data',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ latitude: city.coordinates.lat, longitude: city.coordinates.lon }),
+                        success: function(data) {
+                            $('#result').append(`<p>${city.name}: ${data.message}</p>`);
+                        },
+                        error: function(err) {
+                            $('#result').append(`<p>Error fetching data for ${city.name}: ${err.responseText}</p>`);
+                        }
+                    });
+                });
+            });
+        }
+    });
+</script>
+
+</body>
+</html>
